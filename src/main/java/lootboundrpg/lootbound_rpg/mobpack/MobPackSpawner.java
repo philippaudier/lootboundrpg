@@ -11,8 +11,11 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
@@ -37,10 +40,12 @@ public class MobPackSpawner {
     private static final int TICK_INTERVAL = 20; // Check every second
 
     public static void register() {
-        LootboundRpgMod.LOGGER.info("Registering Lootbound RPG mob pack spawner...");
+        LootboundRpgMod.LOGGER.info("[MobPack] Registering mob pack spawner...");
 
         ServerTickEvents.END_SERVER_TICK.register(server -> {
-            if (!LootboundConfig.get().enableMobPacks) return;
+            LootboundConfig config = LootboundConfig.get();
+
+            if (!config.enableMobPacks) return;
 
             tickCounter++;
             if (tickCounter < TICK_INTERVAL) return;
@@ -75,12 +80,7 @@ public class MobPackSpawner {
         // Check cooldown
         long lastSpawn = playerCooldowns.getOrDefault(playerId, 0L);
         long cooldownMs = config.mobPackSpawnIntervalSeconds * 1000L;
-        long timeRemaining = (cooldownMs - (currentTime - lastSpawn)) / 1000;
         if (currentTime - lastSpawn < cooldownMs) {
-            // Only log occasionally to avoid spam
-            if (timeRemaining % 30 == 0 && timeRemaining > 0) {
-                debugLog("Cooldown for " + player.getName().getString() + ": " + timeRemaining + "s remaining");
-            }
             return;
         }
 
@@ -138,6 +138,9 @@ public class MobPackSpawner {
         int totalSpawned = 0;
         boolean eliteSpawned = false;
 
+        // Create a pack for cohesion and linked aggro
+        UUID packId = PackBehavior.createPack();
+
         // Determine if this pack gets an elite
         boolean shouldSpawnElite = RANDOM.nextDouble() < config.eliteChanceInPacks;
 
@@ -158,6 +161,9 @@ public class MobPackSpawner {
                         EliteMobFactory.makeElite(mob);
                         eliteSpawned = true;
                     }
+
+                    // Add to pack for cohesion and linked aggro
+                    PackBehavior.addToPack(packId, mob);
 
                     // Track for global cap
                     packMobIds.add(mob.getUUID());
@@ -180,6 +186,14 @@ public class MobPackSpawner {
                 mob.setYRot(RANDOM.nextFloat() * 360);
                 // Mark as persistent so VanillaSpawnBlocker doesn't remove it
                 mob.setPersistenceRequired();
+
+                // Give undead mobs a helmet to prevent burning in daylight
+                String entityId = BuiltInRegistries.ENTITY_TYPE.getKey(entityType).getPath();
+                if (isUndeadMob(entityId)) {
+                    mob.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
+                    mob.setDropChance(EquipmentSlot.HEAD, 0.0f);
+                }
+
                 level.addFreshEntity(mob);
                 return mob;
             }
@@ -187,6 +201,15 @@ public class MobPackSpawner {
             LootboundRpgMod.LOGGER.warn("Failed to spawn mob: " + e.getMessage());
         }
         return null;
+    }
+
+    /**
+     * Checks if the entity is undead and burns in sunlight.
+     */
+    private static boolean isUndeadMob(String entityId) {
+        return entityId.equals("zombie") || entityId.equals("skeleton") ||
+               entityId.equals("stray") || entityId.equals("husk") ||
+               entityId.equals("drowned") || entityId.equals("phantom");
     }
 
     /**
