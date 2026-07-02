@@ -99,9 +99,32 @@ public class LootboundConfig {
     public boolean debugMobPackSpawning = false;
 
     /** Disable vanilla hostile mob spawning (zombies, skeletons, etc.) when packs are enabled */
-    public boolean disableVanillaHostileSpawns = true;
+    public boolean disableVanillaHostileSpawns = false;
+
+    // === Threat Zones ===
+
+    /** Radius around world spawn where no hostile packs spawn (SAFE zone) */
+    public int safeZoneRadiusFromWorldSpawn = 64;
+
+    /** Pack spawn rate multiplier during daylight (0.0 = no daylight spawns, 1.0 = normal) */
+    public double daylightPackSpawnMultiplier = 0.5;
+
+    /** Pack spawn rate multiplier in caves/underground (1.0 = normal, 2.0 = double) */
+    public double cavePackSpawnMultiplier = 1.5;
+
+    /** Maximum concurrent packs per player */
+    public int maxPacksPerPlayer = 3;
+
+    /** Distance at which pack mobs despawn from their spawn point */
+    public int packDespawnDistance = 128;
+
+    /** Maximum distance pack mobs can wander from leader (leash radius) */
+    public int packLeashRadius = 10;
 
     // === Debug ===
+
+    /** Log threat tier calculations */
+    public boolean debugThreatTier = false;
 
     /** Enable debug logging for drops and upgrades */
     public boolean debugLogging = false;

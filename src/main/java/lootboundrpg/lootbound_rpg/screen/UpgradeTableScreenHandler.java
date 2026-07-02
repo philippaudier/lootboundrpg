@@ -28,13 +28,17 @@ public class UpgradeTableScreenHandler extends AbstractContainerMenu {
     private final Container container;
     private final Player player;
 
+    // Pending upgrade result (set by performUpgrade, used by collectResult)
+    private UpgradeSystem.UpgradeResult pendingResult = null;
+
     // Slot indices
     public static final int SLOT_EQUIPMENT = 0;
     public static final int SLOT_STONE = 1;
-    public static final int PLAYER_INVENTORY_START = 2;
-    public static final int PLAYER_INVENTORY_END = 29;  // 27 slots
-    public static final int PLAYER_HOTBAR_START = 29;
-    public static final int PLAYER_HOTBAR_END = 38;     // 9 slots
+    public static final int SLOT_RESULT = 2;
+    public static final int PLAYER_INVENTORY_START = 3;
+    public static final int PLAYER_INVENTORY_END = 30;  // 27 slots
+    public static final int PLAYER_HOTBAR_START = 30;
+    public static final int PLAYER_HOTBAR_END = 39;     // 9 slots
 
     // Constructor for client (from network)
     public UpgradeTableScreenHandler(int syncId, Inventory playerInventory) {
@@ -50,7 +54,8 @@ public class UpgradeTableScreenHandler extends AbstractContainerMenu {
         checkContainerSize(container, UpgradeTableBlockEntity.INVENTORY_SIZE);
 
         // Equipment slot (slot 0) - only accepts upgradeable items
-        this.addSlot(new Slot(container, SLOT_EQUIPMENT, 27, 35) {
+        // Position matches texture: inner slot at (23, 51)
+        this.addSlot(new Slot(container, SLOT_EQUIPMENT, 23, 51) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return UpgradeSystem.isUpgradeable(stack);
@@ -63,23 +68,34 @@ public class UpgradeTableScreenHandler extends AbstractContainerMenu {
         });
 
         // Stone slot (slot 1) - only accepts upgrade stones
-        this.addSlot(new Slot(container, SLOT_STONE, 76, 35) {
+        // Position matches texture: x=79, y=51
+        this.addSlot(new Slot(container, SLOT_STONE, 79, 51) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return isUpgradeStone(stack);
             }
         });
 
-        // Player inventory (3 rows of 9) - moved down for larger GUI (210 height)
+        // Result slot (slot 2) - output only, cannot place items
+        // Position matches texture: x=135, y=51
+        this.addSlot(new Slot(container, SLOT_RESULT, 135, 51) {
+            @Override
+            public boolean mayPlace(ItemStack stack) {
+                return false; // Cannot place items in result slot
+            }
+        });
+
+        // Player inventory (3 rows of 9) - 256x256 GUI
+        // Position matches texture: starts at x=48, y=146
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, 128 + row * 18));
+                this.addSlot(new Slot(playerInventory, col + row * 9 + 9, 48 + col * 18, 146 + row * 18));
             }
         }
 
-        // Player hotbar
+        // Player hotbar - at y=206
         for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(playerInventory, col, 8 + col * 18, 186));
+            this.addSlot(new Slot(playerInventory, col, 48 + col * 18, 206));
         }
     }
 
@@ -110,6 +126,20 @@ public class UpgradeTableScreenHandler extends AbstractContainerMenu {
     }
 
     /**
+     * Gets the result item (upgraded equipment after success).
+     */
+    public ItemStack getResult() {
+        return container.getItem(SLOT_RESULT);
+    }
+
+    /**
+     * Checks if the result slot is empty (ready for upgrade).
+     */
+    public boolean isResultSlotEmpty() {
+        return container.getItem(SLOT_RESULT).isEmpty();
+    }
+
+    /**
      * Checks if an upgrade can be attempted.
      */
     public boolean canUpgrade() {
@@ -118,6 +148,7 @@ public class UpgradeTableScreenHandler extends AbstractContainerMenu {
 
         if (!UpgradeSystem.isUpgradeable(equipment)) return false;
         if (stone.isEmpty()) return false;
+        if (!isResultSlotEmpty()) return false; // Result slot must be empty
 
         int currentLevel = UpgradeSystem.getLevel(equipment);
         if (currentLevel >= UpgradeSystem.MAX_LEVEL) return false;
@@ -159,6 +190,7 @@ public class UpgradeTableScreenHandler extends AbstractContainerMenu {
 
     /**
      * Performs the upgrade attempt.
+     * Does NOT move the item - call collectResult after animation to move on success.
      * @return The result of the upgrade
      */
     public UpgradeSystem.UpgradeResult performUpgrade() {
@@ -167,7 +199,7 @@ public class UpgradeTableScreenHandler extends AbstractContainerMenu {
         }
 
         if (!hasEnoughXp()) {
-            return UpgradeSystem.UpgradeResult.INVALID_STONE; // Using as "not enough XP" indicator
+            return UpgradeSystem.UpgradeResult.INVALID_STONE;
         }
 
         ItemStack equipment = getEquipment();
@@ -179,13 +211,39 @@ public class UpgradeTableScreenHandler extends AbstractContainerMenu {
             player.giveExperienceLevels(-xpCost);
         }
 
-        // Attempt the upgrade (this consumes the stone)
+        // Attempt the upgrade (this consumes the stone, modifies equipment in place)
         UpgradeSystem.UpgradeResult result = UpgradeSystem.attemptUpgrade(equipment, stone);
+
+        // Store result for collection phase
+        pendingResult = result;
 
         // Notify the container changed
         container.setChanged();
 
         return result;
+    }
+
+    /**
+     * Collects the upgrade result - moves item to result slot if success.
+     * Called by client after animation completes.
+     */
+    public void collectResult() {
+        if (pendingResult == UpgradeSystem.UpgradeResult.SUCCESS) {
+            ItemStack equipment = getEquipment();
+            if (!equipment.isEmpty()) {
+                container.setItem(SLOT_RESULT, equipment.copy());
+                container.setItem(SLOT_EQUIPMENT, ItemStack.EMPTY);
+                container.setChanged();
+            }
+        }
+        pendingResult = null;
+    }
+
+    /**
+     * Check if there's a pending successful upgrade to collect.
+     */
+    public boolean hasPendingSuccess() {
+        return pendingResult == UpgradeSystem.UpgradeResult.SUCCESS;
     }
 
     @Override
@@ -246,26 +304,31 @@ public class UpgradeTableScreenHandler extends AbstractContainerMenu {
 
     /**
      * Handles button clicks from the client.
-     * Button ID 0 = attempt upgrade
+     * Button ID 0 = start upgrade (performs upgrade, no movement)
+     * Button ID 1 = collect result (moves item if success, plays feedback)
      */
     @Override
     public boolean clickMenuButton(Player player, int buttonId) {
         if (buttonId == 0) {
-            // Get target level before upgrade attempt
-            int targetLevel = UpgradeSystem.getLevel(getEquipment()) + 1;
-
-            // Attempt upgrade
+            // Start upgrade - perform upgrade but don't move item yet
             UpgradeSystem.UpgradeResult result = performUpgrade();
+            return result == UpgradeSystem.UpgradeResult.SUCCESS ||
+                   result == UpgradeSystem.UpgradeResult.FAILURE;
+        } else if (buttonId == 1) {
+            // Collect result - move item and play feedback
+            int targetLevel = UpgradeSystem.getLevel(getEquipment()) + 1;
+            boolean wasSuccess = hasPendingSuccess();
+
+            collectResult();
 
             // Play feedback sounds and particles
-            if (result == UpgradeSystem.UpgradeResult.SUCCESS) {
+            if (wasSuccess) {
                 playSuccessFeedback(player, targetLevel);
-            } else if (result == UpgradeSystem.UpgradeResult.FAILURE) {
+            } else {
                 playFailureFeedback(player);
             }
 
-            return result == UpgradeSystem.UpgradeResult.SUCCESS ||
-                   result == UpgradeSystem.UpgradeResult.FAILURE;
+            return true;
         }
         return false;
     }

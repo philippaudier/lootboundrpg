@@ -1,6 +1,7 @@
 package lootboundrpg.lootbound_rpg.mobpack;
 
 import lootboundrpg.lootbound_rpg.LootboundRpgMod;
+import lootboundrpg.lootbound_rpg.config.LootboundConfig;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.level.ServerLevel;
@@ -26,9 +27,6 @@ public class PackBehavior {
 
     // Pack leaders: packId -> leader mob UUID
     private static final Map<UUID, UUID> packLeaders = new HashMap<>();
-
-    // Maximum distance mobs will stay from pack leader
-    public static final double PACK_COHESION_RADIUS = 20.0;
 
     // Distance at which linked aggro triggers
     public static final double AGGRO_LINK_RADIUS = 24.0;
@@ -93,6 +91,9 @@ public class PackBehavior {
      * Checks pack cohesion and makes mobs move toward leader if too far.
      */
     private static void checkPackCohesion(ServerLevel level) {
+        LootboundConfig config = LootboundConfig.get();
+        double leashRadius = config.packLeashRadius;
+
         for (Map.Entry<UUID, Set<UUID>> entry : packs.entrySet()) {
             UUID packId = entry.getKey();
             Set<UUID> members = entry.getValue();
@@ -110,7 +111,7 @@ public class PackBehavior {
                     if (mob.getTarget() != null) continue;
 
                     double distance = mob.distanceTo(leader);
-                    if (distance > PACK_COHESION_RADIUS) {
+                    if (distance > leashRadius) {
                         // Move toward leader
                         mob.getNavigation().moveTo(leader, 1.0);
                     }

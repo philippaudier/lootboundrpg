@@ -113,14 +113,14 @@ public class DebugCommands {
 
                 // /lbrpg spawnpack <type> - spawn a mob pack
                 .then(Commands.literal("spawnpack")
-                        .then(Commands.literal("zombie_pack")
-                                .executes(ctx -> spawnPack(ctx.getSource(), MobPackType.ZOMBIE_PACK)))
+                        .then(Commands.literal("zombie_horde")
+                                .executes(ctx -> spawnPack(ctx.getSource(), MobPackType.ZOMBIE_HORDE)))
                         .then(Commands.literal("skeleton_patrol")
                                 .executes(ctx -> spawnPack(ctx.getSource(), MobPackType.SKELETON_PATROL)))
                         .then(Commands.literal("spider_nest")
                                 .executes(ctx -> spawnPack(ctx.getSource(), MobPackType.SPIDER_NEST)))
-                        .then(Commands.literal("mixed_ambush")
-                                .executes(ctx -> spawnPack(ctx.getSource(), MobPackType.MIXED_AMBUSH)))
+                        .then(Commands.literal("elite_ambush")
+                                .executes(ctx -> spawnPack(ctx.getSource(), MobPackType.ELITE_AMBUSH)))
                         .then(Commands.literal("random")
                                 .executes(ctx -> spawnPack(ctx.getSource(), MobPackType.randomPack()))))
 

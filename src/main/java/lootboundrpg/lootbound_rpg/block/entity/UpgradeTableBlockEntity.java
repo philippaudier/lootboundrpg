@@ -26,14 +26,14 @@ import org.jetbrains.annotations.Nullable;
  * Stores:
  * - Slot 0: Equipment to upgrade
  * - Slot 1: Upgrade stone
- *
- * The result slot (slot 2) is virtual and handled by the screen handler.
+ * - Slot 2: Result (upgraded equipment on success)
  */
 public class UpgradeTableBlockEntity extends BlockEntity implements Container, MenuProvider {
 
     public static final int SLOT_EQUIPMENT = 0;
     public static final int SLOT_STONE = 1;
-    public static final int INVENTORY_SIZE = 2;
+    public static final int SLOT_RESULT = 2;
+    public static final int INVENTORY_SIZE = 3;
 
     private final NonNullList<ItemStack> inventory = NonNullList.withSize(INVENTORY_SIZE, ItemStack.EMPTY);
 

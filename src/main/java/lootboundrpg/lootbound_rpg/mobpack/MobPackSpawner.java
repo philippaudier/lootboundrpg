@@ -2,6 +2,8 @@ package lootboundrpg.lootbound_rpg.mobpack;
 
 import lootboundrpg.lootbound_rpg.LootboundRpgMod;
 import lootboundrpg.lootbound_rpg.config.LootboundConfig;
+import lootboundrpg.lootbound_rpg.threat.ThreatCalculator;
+import lootboundrpg.lootbound_rpg.threat.ThreatTier;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -100,8 +102,25 @@ public class MobPackSpawner {
         // Get server level
         if (!(player.level() instanceof ServerLevel serverLevel)) return;
 
+        // Calculate threat tier at player position
+        ThreatTier threatTier = ThreatCalculator.calculate(serverLevel, player.blockPosition());
+
+        // Skip SAFE zones
+        if (threatTier == ThreatTier.SAFE) {
+            debugLog("Player " + player.getName().getString() + " is in SAFE zone, skipping pack spawn");
+            return;
+        }
+
+        // Apply spawn multiplier based on conditions
+        double spawnMultiplier = ThreatCalculator.getSpawnMultiplier(serverLevel, player.blockPosition());
+        if (spawnMultiplier < 1.0 && RANDOM.nextDouble() > spawnMultiplier) {
+            debugLog("Spawn skipped due to multiplier (" + String.format("%.2f", spawnMultiplier) + ")");
+            playerCooldowns.put(playerId, currentTime);
+            return;
+        }
+
         debugLog("Attempting pack spawn for " + player.getName().getString() +
-                " at pos " + player.blockPosition());
+                " at pos " + player.blockPosition() + " (threat: " + threatTier.getDisplayName() + ")");
 
         // Find valid spawn position
         BlockPos spawnPos = findSpawnPosition(player, serverLevel);
@@ -113,10 +132,15 @@ public class MobPackSpawner {
             return;
         }
 
-        // Select random pack type
-        MobPackType packType = MobPackType.randomPack();
+        // Select pack type based on threat tier
+        MobPackType packType = MobPackType.randomPackForThreat(threatTier);
+        if (packType == null) {
+            debugLog("No eligible pack types for threat tier: " + threatTier.getDisplayName());
+            return;
+        }
 
-        debugLog("Found valid position " + spawnPos + ", spawning " + packType.getDisplayName());
+        debugLog("Found valid position " + spawnPos + ", spawning " + packType.getDisplayName() +
+                " (threat: " + threatTier.getDisplayName() + ")");
 
         // Spawn the pack
         int spawned = spawnPack(serverLevel, spawnPos, packType);
