@@ -75,7 +75,7 @@ public class LootboundConfig {
     public boolean enableMobPacks = true;
 
     /** Interval between pack spawn attempts per player (seconds) */
-    public int mobPackSpawnIntervalSeconds = 120;
+    public int mobPackSpawnIntervalSeconds = 30; /* default = 120 */
 
     /** Minimum distance from player for pack spawns */
     public int mobPackMinDistance = 32;
@@ -99,7 +99,7 @@ public class LootboundConfig {
     public boolean debugMobPackSpawning = true;
 
     /** Disable vanilla hostile mob spawning (zombies, skeletons, etc.) when packs are enabled */
-    public boolean disableVanillaHostileSpawns = true;
+    public boolean disableVanillaHostileSpawns = false;
 
     // === Debug ===
 

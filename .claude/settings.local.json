@@ -27,7 +27,10 @@
       "Bash(Select-String -Pattern \"LootboundRPG\")",
       "Bash(python:*)",
       "Bash(./gradlew:*)",
-      "WebFetch(domain:wiki.fabricmc.net)"
+      "WebFetch(domain:wiki.fabricmc.net)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   }
 }

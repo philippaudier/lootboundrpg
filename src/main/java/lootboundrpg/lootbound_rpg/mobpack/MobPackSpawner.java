@@ -178,6 +178,8 @@ public class MobPackSpawner {
             if (entity instanceof Mob mob) {
                 mob.setPos(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
                 mob.setYRot(RANDOM.nextFloat() * 360);
+                // Mark as persistent so VanillaSpawnBlocker doesn't remove it
+                mob.setPersistenceRequired();
                 level.addFreshEntity(mob);
                 return mob;
             }
