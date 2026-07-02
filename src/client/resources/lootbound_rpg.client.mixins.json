@@ -3,6 +3,7 @@
 	"package": "lootboundrpg.lootbound_rpg.client.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"client": [
+		"GuiMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

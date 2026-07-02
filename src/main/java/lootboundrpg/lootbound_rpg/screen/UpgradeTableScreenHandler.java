@@ -180,6 +180,17 @@ public class UpgradeTableScreenHandler extends AbstractContainerMenu {
     }
 
     /**
+     * Gets the downgrade chance for the current upgrade.
+     */
+    public double getDowngradeChance() {
+        ItemStack equipment = getEquipment();
+        if (!UpgradeSystem.isUpgradeable(equipment)) return 0;
+
+        int targetLevel = UpgradeSystem.getLevel(equipment) + 1;
+        return UpgradeSystem.getDowngradeChance(targetLevel);
+    }
+
+    /**
      * Checks if the player has enough XP.
      */
     public boolean hasEnoughXp() {
@@ -244,6 +255,13 @@ public class UpgradeTableScreenHandler extends AbstractContainerMenu {
      */
     public boolean hasPendingSuccess() {
         return pendingResult == UpgradeSystem.UpgradeResult.SUCCESS;
+    }
+
+    /**
+     * Check if there's a pending downgrade (failed AND level decreased).
+     */
+    public boolean hasPendingDowngrade() {
+        return pendingResult == UpgradeSystem.UpgradeResult.DOWNGRADE;
     }
 
     @Override
@@ -313,17 +331,21 @@ public class UpgradeTableScreenHandler extends AbstractContainerMenu {
             // Start upgrade - perform upgrade but don't move item yet
             UpgradeSystem.UpgradeResult result = performUpgrade();
             return result == UpgradeSystem.UpgradeResult.SUCCESS ||
-                   result == UpgradeSystem.UpgradeResult.FAILURE;
+                   result == UpgradeSystem.UpgradeResult.FAILURE ||
+                   result == UpgradeSystem.UpgradeResult.DOWNGRADE;
         } else if (buttonId == 1) {
             // Collect result - move item and play feedback
             int targetLevel = UpgradeSystem.getLevel(getEquipment()) + 1;
             boolean wasSuccess = hasPendingSuccess();
+            boolean wasDowngrade = hasPendingDowngrade();
 
             collectResult();
 
             // Play feedback sounds and particles
             if (wasSuccess) {
                 playSuccessFeedback(player, targetLevel);
+            } else if (wasDowngrade) {
+                playDowngradeFeedback(player);
             } else {
                 playFailureFeedback(player);
             }
@@ -394,5 +416,25 @@ public class UpgradeTableScreenHandler extends AbstractContainerMenu {
                 SoundSource.BLOCKS, 0.8f, 0.8f);
         serverLevel.sendParticles(ParticleTypes.SMOKE, x, y, z, 15, 0.4, 0.3, 0.4, 0.02);
         serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE, x, y, z, 5, 0.3, 0.2, 0.3, 0.01);
+    }
+
+    /**
+     * Plays downgrade feedback (failure + level loss).
+     */
+    private void playDowngradeFeedback(Player player) {
+        if (!(player.level() instanceof ServerLevel serverLevel)) return;
+
+        double x = player.getX();
+        double y = player.getY() + 1.0;
+        double z = player.getZ();
+
+        // Anvil break sound + red particles (more dramatic than simple failure)
+        serverLevel.playSound(null, player.blockPosition(), SoundEvents.ANVIL_DESTROY,
+                SoundSource.BLOCKS, 1.0f, 0.6f);
+        serverLevel.playSound(null, player.blockPosition(), SoundEvents.GLASS_BREAK,
+                SoundSource.BLOCKS, 0.5f, 0.8f);
+        serverLevel.sendParticles(ParticleTypes.SMOKE, x, y, z, 25, 0.5, 0.4, 0.5, 0.03);
+        serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE, x, y, z, 10, 0.4, 0.3, 0.4, 0.02);
+        serverLevel.sendParticles(ParticleTypes.ANGRY_VILLAGER, x, y, z, 5, 0.3, 0.3, 0.3, 0.0);
     }
 }

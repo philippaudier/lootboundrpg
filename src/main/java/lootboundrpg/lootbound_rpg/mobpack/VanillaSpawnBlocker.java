@@ -21,15 +21,15 @@ public class VanillaSpawnBlocker {
     private static final Set<String> BLOCKED_MOBS = Set.of(
             "zombie", "skeleton", "spider", "creeper",
             "husk", "stray", "drowned", "cave_spider",
-            "witch", "phantom", "slime"
+            "witch", "phantom", "slime", "enderman"
     );
 
-    // Mobs that should NEVER be blocked (bosses, special mobs)
+    // Mobs that should NEVER be blocked (bosses, nether/end exclusive, structure mobs)
     private static final Set<String> NEVER_BLOCK = Set.of(
             "wither", "ender_dragon", "elder_guardian", "warden",
             "ravager", "evoker", "vindicator", "pillager",
             "wither_skeleton", "piglin_brute", "piglin", "hoglin",
-            "blaze", "ghast", "magma_cube", "enderman", "endermite",
+            "blaze", "ghast", "magma_cube", "endermite",
             "shulker", "guardian"
     );
 

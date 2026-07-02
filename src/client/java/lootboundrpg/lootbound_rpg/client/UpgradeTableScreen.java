@@ -1,7 +1,9 @@
 package lootboundrpg.lootbound_rpg.client;
 
 import lootboundrpg.lootbound_rpg.LootboundRpgMod;
+import lootboundrpg.lootbound_rpg.config.LootboundConfig;
 import lootboundrpg.lootbound_rpg.screen.UpgradeTableScreenHandler;
+import lootboundrpg.lootbound_rpg.upgrade.EquipmentGrade;
 import lootboundrpg.lootbound_rpg.upgrade.UpgradeSystem;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -30,6 +32,13 @@ public class UpgradeTableScreen extends AbstractContainerScreen<UpgradeTableScre
     private static final int ARROW2_WIDTH = 27;
     private static final int ARROW_Y = 56;
     private static final int ARROW_HEIGHT = 7;
+
+    // Slot positions for grade halo (must match UpgradeTableScreenHandler)
+    private static final int EQUIPMENT_SLOT_X = 23;
+    private static final int EQUIPMENT_SLOT_Y = 51;
+    private static final int RESULT_SLOT_X = 135;
+    private static final int RESULT_SLOT_Y = 51;
+    private static final int SLOT_SIZE = 16;
 
     private Button upgradeButton;
 
@@ -116,10 +125,11 @@ public class UpgradeTableScreen extends AbstractContainerScreen<UpgradeTableScre
             if (elapsed >= ANIMATION_DURATION_MS) {
                 isAnimating = false;
 
-                // Detect result by checking if equipment level increased
+                // Detect result by checking if equipment level changed
                 ItemStack currentEquip = menu.getEquipment();
                 int currentLevel = UpgradeSystem.getLevel(currentEquip);
                 boolean success = currentLevel > previousLevel;
+                boolean downgrade = currentLevel < previousLevel;
 
                 // Send collect button to server (moves item on success)
                 if (minecraft != null && minecraft.gameMode != null) {
@@ -128,6 +138,8 @@ public class UpgradeTableScreen extends AbstractContainerScreen<UpgradeTableScre
 
                 if (success) {
                     setStatus("Enhancement successful!", 0xFF55FF55);
+                } else if (downgrade) {
+                    setStatus("DOWNGRADE! Level -1", 0xFFFF0000);
                 } else {
                     setStatus("Enhancement failed!", 0xFFFF5555);
                 }
@@ -155,6 +167,9 @@ public class UpgradeTableScreen extends AbstractContainerScreen<UpgradeTableScre
                 this.imageWidth, this.imageHeight,
                 BACKGROUND_WIDTH, BACKGROUND_HEIGHT
         );
+
+        // Draw grade halos behind equipment and result slots
+        drawGradeHalos(graphics);
 
         // Draw animated progress bars on arrows
         if (isAnimating) {
@@ -194,19 +209,77 @@ public class UpgradeTableScreen extends AbstractContainerScreen<UpgradeTableScre
         }
 
         // Cover result slot and show "?"
-        int resultSlotX = this.leftPos + 134;
-        int resultSlotY = this.topPos + 50;
-        graphics.fill(resultSlotX, resultSlotY, resultSlotX + 18, resultSlotY + 18, 0xFF191920);
+        int resultSlotX = this.leftPos + RESULT_SLOT_X;
+        int resultSlotY = this.topPos + RESULT_SLOT_Y;
+        graphics.fill(resultSlotX, resultSlotY, resultSlotX + SLOT_SIZE, resultSlotY + SLOT_SIZE, 0xFF191920);
 
         // Draw pulsing "?" in result slot
         String question = "?";
-        int qx = resultSlotX + 9 - font.width(question) / 2;
-        int qy = resultSlotY + 5;
+        int qx = resultSlotX + (SLOT_SIZE / 2) - font.width(question) / 2;
+        int qy = resultSlotY + (SLOT_SIZE / 2) - 4;
         int qColor = (0xFF << 24) | (pulse << 16) | (pulse << 8) | pulse;
         graphics.text(font, question, qx, qy, qColor, false);
 
         // Equipment slot stays visible - don't cover it during animation
         // The saved equipment reference ensures we can track state
+    }
+
+    /**
+     * Draws grade-colored halos behind equipment and result slots.
+     */
+    private void drawGradeHalos(GuiGraphicsExtractor graphics) {
+        if (!LootboundConfig.get().enableUpgradeTableGradeGlow) return;
+
+        // Equipment slot halo
+        ItemStack equipment = menu.getEquipment();
+        if (!equipment.isEmpty() && UpgradeSystem.isUpgradeable(equipment)) {
+            EquipmentGrade grade = UpgradeSystem.getGrade(equipment);
+            drawSlotHalo(graphics, EQUIPMENT_SLOT_X, EQUIPMENT_SLOT_Y, grade);
+        }
+
+        // Result slot halo (only when not animating)
+        if (!isAnimating) {
+            ItemStack result = menu.getResult();
+            if (!result.isEmpty() && UpgradeSystem.isUpgradeable(result)) {
+                EquipmentGrade grade = UpgradeSystem.getGrade(result);
+                drawSlotHalo(graphics, RESULT_SLOT_X, RESULT_SLOT_Y, grade);
+            }
+        }
+    }
+
+    /**
+     * Draws a colored halo behind a slot based on grade.
+     */
+    private void drawSlotHalo(GuiGraphicsExtractor graphics, int slotX, int slotY, EquipmentGrade grade) {
+        int color = getGradeHaloColor(grade);
+        if (color == 0) return; // No halo for COMMON
+
+        int x = this.leftPos + slotX;
+        int y = this.topPos + slotY;
+
+        // Draw a slightly larger rectangle behind the slot for the halo effect
+        // Using 2-pixel padding around the 16x16 slot
+        int padding = 2;
+        graphics.fill(x - padding, y - padding, x + SLOT_SIZE + padding, y + SLOT_SIZE + padding, color);
+    }
+
+    /**
+     * Gets the halo color for a grade (ARGB format).
+     */
+    private int getGradeHaloColor(EquipmentGrade grade) {
+        long time = System.currentTimeMillis();
+
+        return switch (grade) {
+            case COMMON -> 0; // No halo
+            case UNCOMMON -> 0x4055FF55; // Subtle green (25% alpha)
+            case RARE -> 0x405555FF;     // Subtle blue (25% alpha)
+            case EPIC -> 0x50AA55FF;     // Purple (31% alpha)
+            case LEGENDARY -> {
+                // Golden with subtle pulse
+                int pulse = (int) (Math.sin(time / 300.0) * 20 + 60); // Alpha pulses 40-80
+                yield (pulse << 24) | 0xFFD700; // Gold color with pulsing alpha
+            }
+        };
     }
 
     @Override
@@ -265,8 +338,10 @@ public class UpgradeTableScreen extends AbstractContainerScreen<UpgradeTableScre
 
         int targetLevel = currentLevel + 1;
         double chance = menu.getSuccessChance();
+        double downgradeChance = menu.getDowngradeChance();
         int xpCost = menu.getXpCost();
         int chancePercent = (int) (chance * 100);
+        int downgradePercent = (int) (downgradeChance * 100);
 
         // Line 1: Level progression
         graphics.text(font, "+" + currentLevel + " -> +" + targetLevel, panelX, lineY1, 0xFF55FF55, false);
@@ -275,9 +350,14 @@ public class UpgradeTableScreen extends AbstractContainerScreen<UpgradeTableScre
         int chanceColor = chancePercent >= 50 ? 0xFF55FF55 : (chancePercent >= 25 ? 0xFFFFFF55 : 0xFFFF5555);
         graphics.text(font, "Chance: " + chancePercent + "%", panelX, lineY2, chanceColor, false);
 
-        // Line 3: XP cost
-        int xpColor = menu.hasEnoughXp() ? 0xFFFFFFFF : 0xFFFF5555;
-        graphics.text(font, "Cost: " + xpCost + " XP", panelX, lineY3, xpColor, false);
+        // Line 3: XP cost or Downgrade risk
+        if (downgradePercent > 0) {
+            // Show downgrade risk (more important than XP cost)
+            graphics.text(font, "Risk: -1 " + downgradePercent + "%", panelX, lineY3, 0xFFFF5555, false);
+        } else {
+            int xpColor = menu.hasEnoughXp() ? 0xFFFFFFFF : 0xFFFF5555;
+            graphics.text(font, "Cost: " + xpCost + " XP", panelX, lineY3, xpColor, false);
+        }
 
         // Stone status - centered in box under button (box is 173-247, y=106-118)
         ItemStack stone = menu.getStone();

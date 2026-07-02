@@ -1,9 +1,11 @@
 package lootboundrpg.lootbound_rpg.loot;
 
 import lootboundrpg.lootbound_rpg.LootboundRpgMod;
+import lootboundrpg.lootbound_rpg.affix.AffixGenerator;
 import lootboundrpg.lootbound_rpg.config.LootboundConfig;
 import lootboundrpg.lootbound_rpg.mobpack.EliteMobFactory;
 import lootboundrpg.lootbound_rpg.upgrade.EquipmentGrade;
+import lootboundrpg.lootbound_rpg.upgrade.EquipmentNaming;
 import lootboundrpg.lootbound_rpg.upgrade.UpgradeSystem;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -100,7 +102,8 @@ public class MobEquipmentDrops {
 
     private static void tryDropEquipment(LivingEntity entity, float dropChance, MobTier tier) {
         // Apply config multiplier
-        float adjustedChance = LootboundConfig.get().applyDropMultiplier(dropChance);
+        LootboundConfig config = LootboundConfig.get();
+        float adjustedChance = config.applyDropMultiplier(dropChance);
         if (RANDOM.nextFloat() > adjustedChance) return;
 
         // Choose random equipment type
@@ -111,6 +114,11 @@ public class MobEquipmentDrops {
         EquipmentGrade grade = rollGrade(tier);
         UpgradeSystem.setGrade(equipment, grade);
 
+        // Apply affixes based on grade (if enabled)
+        if (config.enableAffixes) {
+            AffixGenerator.rollAndApplyAffixes(equipment, grade);
+        }
+
         // Small chance for pre-upgraded equipment from elite+ mobs
         if (tier.ordinal() >= MobTier.DANGEROUS.ordinal()) {
             int preLevel = rollPreLevel(tier);
@@ -118,6 +126,9 @@ public class MobEquipmentDrops {
                 UpgradeSystem.setLevel(equipment, preLevel);
             }
         }
+
+        // Apply colored name based on grade and level
+        EquipmentNaming.updateDisplayName(equipment);
 
         // Drop the item
         dropItem(entity, equipment);

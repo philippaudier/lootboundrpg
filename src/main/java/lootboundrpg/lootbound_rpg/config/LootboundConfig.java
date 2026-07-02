@@ -75,31 +75,31 @@ public class LootboundConfig {
     public boolean enableMobPacks = true;
 
     /** Interval between pack spawn attempts per player (seconds) */
-    public int mobPackSpawnIntervalSeconds = 90;
+    public int mobPackSpawnIntervalSeconds = 180;
 
     /** Minimum distance from player for pack spawns */
     public int mobPackMinDistance = 32;
 
     /** Maximum distance from player for pack spawns */
-    public int mobPackMaxDistance = 96;
+    public int mobPackMaxDistance = 64;
 
     /** Maximum hostile mobs nearby before blocking pack spawns */
-    public int mobPackMaxHostileNearby = 12;
+    public int mobPackMaxHostileNearby = 6;
 
     /** Global cap on total pack mobs in the world */
-    public int mobPackGlobalCap = 40;
+    public int mobPackGlobalCap = 20;
 
     /** Allow packs to spawn during daytime in lit areas */
-    public boolean allowDaylightPacks = true;
+    public boolean allowDaylightPacks = false;
 
     /** Chance for elite mobs to spawn in packs (0.0 to 1.0) */
-    public double eliteChanceInPacks = 0.08;
+    public double eliteChanceInPacks = 0.05;
 
     /** Debug logging for mob pack spawning */
     public boolean debugMobPackSpawning = false;
 
     /** Disable vanilla hostile mob spawning (zombies, skeletons, etc.) when packs are enabled */
-    public boolean disableVanillaHostileSpawns = false;
+    public boolean disableVanillaHostileSpawns = true;
 
     // === Threat Zones ===
 
@@ -113,13 +113,55 @@ public class LootboundConfig {
     public double cavePackSpawnMultiplier = 1.5;
 
     /** Maximum concurrent packs per player */
-    public int maxPacksPerPlayer = 3;
+    public int maxPacksPerPlayer = 2;
 
     /** Distance at which pack mobs despawn from their spawn point */
     public int packDespawnDistance = 128;
 
     /** Maximum distance pack mobs can wander from leader (leash radius) */
     public int packLeashRadius = 10;
+
+    // === Affixes ===
+
+    /** Enable the affix system on equipment */
+    public boolean enableAffixes = true;
+
+    /** Enable colored item names based on grade */
+    public boolean enableColoredItemNames = true;
+
+    /** Enable grade glow effect in Upgrade Table */
+    public boolean enableUpgradeTableGradeGlow = true;
+
+    // === Upgrade Downgrade ===
+
+    /** Enable downgrade risk on failed upgrades (+6 and above) */
+    public boolean enableUpgradeDowngrade = true;
+
+    /** Minimum level where downgrade risk applies */
+    public int minimumLevelForDowngrade = 6;
+
+    /** Downgrade chance when failing +6 upgrade (0.0 to 1.0) */
+    public double downgradeChanceTo6 = 0.10;
+
+    /** Downgrade chance when failing +7 upgrade (0.0 to 1.0) */
+    public double downgradeChanceTo7 = 0.25;
+
+    /** Downgrade chance when failing +8 upgrade (0.0 to 1.0) */
+    public double downgradeChanceTo8 = 0.40;
+
+    /** Downgrade chance when failing +9 upgrade (0.0 to 1.0) */
+    public double downgradeChanceTo9 = 0.55;
+
+    /** Downgrade chance when failing +10 upgrade (0.0 to 1.0) */
+    public double downgradeChanceTo10 = 0.70;
+
+    // === Custom HUD ===
+
+    /** Enable Lootbound-style custom HUD (status bars in top-left) */
+    public boolean enableLbHud = true;
+
+    /** Enable mob health bar when looking at a mob */
+    public boolean enableMobHealthBar = true;
 
     // === Debug ===
 
@@ -206,5 +248,23 @@ public class LootboundConfig {
         if (debugLogging) {
             LootboundRpgMod.LOGGER.info("[DEBUG] " + message, args);
         }
+    }
+
+    /**
+     * Gets the downgrade chance for a specific target level.
+     * Returns 0 if downgrade is disabled or level is below minimum.
+     */
+    public double getDowngradeChance(int targetLevel) {
+        if (!enableUpgradeDowngrade) return 0;
+        if (targetLevel < minimumLevelForDowngrade) return 0;
+
+        return switch (targetLevel) {
+            case 6 -> downgradeChanceTo6;
+            case 7 -> downgradeChanceTo7;
+            case 8 -> downgradeChanceTo8;
+            case 9 -> downgradeChanceTo9;
+            case 10 -> downgradeChanceTo10;
+            default -> 0;
+        };
     }
 }

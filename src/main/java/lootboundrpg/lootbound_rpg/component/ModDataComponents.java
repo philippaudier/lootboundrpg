@@ -2,6 +2,7 @@ package lootboundrpg.lootbound_rpg.component;
 
 import com.mojang.serialization.Codec;
 import lootboundrpg.lootbound_rpg.LootboundRpgMod;
+import lootboundrpg.lootbound_rpg.affix.AffixData;
 import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -44,6 +45,22 @@ public class ModDataComponents {
             DataComponentType.<Integer>builder()
                     .persistent(Codec.intRange(0, 4))  // Validates 0-4 range (5 grades)
                     .networkSynchronized(ByteBufCodecs.VAR_INT)  // Sync to client
+                    .build()
+    );
+
+    /**
+     * Equipment affixes component.
+     * Stores the list of affix IDs on an item.
+     *
+     * Affixes provide additional stat bonuses based on grade:
+     * COMMON=0, UNCOMMON=1 minor, RARE=1 major, EPIC=1 major+1 minor, LEGENDARY=2 major+1 minor
+     */
+    public static final DataComponentType<AffixData> EQUIPMENT_AFFIXES = Registry.register(
+            BuiltInRegistries.DATA_COMPONENT_TYPE,
+            LootboundRpgMod.id("equipment_affixes"),
+            DataComponentType.<AffixData>builder()
+                    .persistent(AffixData.CODEC)
+                    .networkSynchronized(AffixData.STREAM_CODEC)
                     .build()
     );
 

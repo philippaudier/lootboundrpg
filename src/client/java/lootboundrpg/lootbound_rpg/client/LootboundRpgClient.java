@@ -14,6 +14,12 @@ public class LootboundRpgClient implements ClientModInitializer {
         // Register tooltip handler for equipment level display
         TooltipHandler.register();
 
+        // Register Lootbound HUD renderer
+        LbHudRenderer.register();
+
+        // Register mob health bar renderer
+        LbMobHealthRenderer.register();
+
         // Register screen for upgrade table
         MenuScreens.register(ModScreenHandlers.UPGRADE_TABLE, UpgradeTableScreen::new);
     }

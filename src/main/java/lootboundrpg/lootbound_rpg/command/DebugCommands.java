@@ -2,10 +2,14 @@ package lootboundrpg.lootbound_rpg.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import lootboundrpg.lootbound_rpg.affix.AffixGenerator;
+import lootboundrpg.lootbound_rpg.affix.AffixInstance;
+import lootboundrpg.lootbound_rpg.affix.EquipmentAffix;
 import lootboundrpg.lootbound_rpg.item.ModItems;
 import lootboundrpg.lootbound_rpg.mobpack.MobPackSpawner;
 import lootboundrpg.lootbound_rpg.mobpack.MobPackType;
 import lootboundrpg.lootbound_rpg.upgrade.EquipmentGrade;
+import lootboundrpg.lootbound_rpg.upgrade.EquipmentNaming;
 import lootboundrpg.lootbound_rpg.upgrade.UpgradeSystem;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.ChatFormatting;
@@ -19,6 +23,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
+import java.util.List;
+
 /**
  * Debug commands for testing Lootbound RPG systems.
  *
@@ -29,6 +35,8 @@ import net.minecraft.world.item.Items;
  * /lbrpg upgrade - Attempt to upgrade held item with off-hand stone
  * /lbrpg setlevel <level> - Set level of held item directly
  * /lbrpg setgrade <grade> - Set grade of held item
+ * /lbrpg rollaffixes - Roll new affixes on held item based on grade
+ * /lbrpg clearaffixes - Remove all affixes from held item
  * /lbrpg info - Show info about held item
  * /lbrpg spawnpack <type> - Spawn a mob pack near the player
  * /lbrpg packinfo - Show mob pack system status
@@ -106,6 +114,14 @@ public class DebugCommands {
                                 .executes(ctx -> setGrade(ctx.getSource(), EquipmentGrade.EPIC)))
                         .then(Commands.literal("legendary")
                                 .executes(ctx -> setGrade(ctx.getSource(), EquipmentGrade.LEGENDARY))))
+
+                // /lbrpg rollaffixes - roll new affixes based on grade
+                .then(Commands.literal("rollaffixes")
+                        .executes(ctx -> rollAffixes(ctx.getSource())))
+
+                // /lbrpg clearaffixes - remove all affixes
+                .then(Commands.literal("clearaffixes")
+                        .executes(ctx -> clearAffixes(ctx.getSource())))
 
                 // /lbrpg info - show info about held item
                 .then(Commands.literal("info")
@@ -193,6 +209,7 @@ public class DebugCommands {
         String message = switch (result) {
             case SUCCESS -> "Upgrade successful! New level: +" + UpgradeSystem.getLevel(mainHand);
             case FAILURE -> "Upgrade failed! Stone consumed, level unchanged.";
+            case DOWNGRADE -> "Upgrade failed! DOWNGRADE to +" + UpgradeSystem.getLevel(mainHand);
             case INVALID_ITEM -> "Main hand item cannot be upgraded (needs sword or pickaxe)";
             case INVALID_STONE -> "Wrong stone type for this upgrade level";
             case MAX_LEVEL -> "Item is already at maximum level (+10)";
@@ -201,7 +218,8 @@ public class DebugCommands {
 
         if (result == UpgradeSystem.UpgradeResult.SUCCESS) {
             source.sendSuccess(() -> Component.literal(message), false);
-        } else if (result == UpgradeSystem.UpgradeResult.FAILURE) {
+        } else if (result == UpgradeSystem.UpgradeResult.FAILURE ||
+                   result == UpgradeSystem.UpgradeResult.DOWNGRADE) {
             source.sendSuccess(() -> Component.literal(message), false);
         } else {
             source.sendFailure(Component.literal(message));
@@ -225,6 +243,7 @@ public class DebugCommands {
         }
 
         UpgradeSystem.setLevel(mainHand, level);
+        EquipmentNaming.updateDisplayName(mainHand);
         source.sendSuccess(() -> Component.literal("Set equipment level to +" + level), true);
         return 1;
     }
@@ -244,6 +263,7 @@ public class DebugCommands {
         }
 
         UpgradeSystem.setGrade(mainHand, grade);
+        EquipmentNaming.updateDisplayName(mainHand);
         source.sendSuccess(() -> Component.literal("Set equipment grade to " + grade.getName().toUpperCase()), true);
         return 1;
     }
@@ -272,21 +292,97 @@ public class DebugCommands {
         if (upgradeable) {
             source.sendSuccess(() -> Component.literal("Grade: " + grade.getName().toUpperCase() +
                     " (+" + grade.getBonusPercent() + "% bonus)"), false);
+
+            // Show affixes
+            List<AffixInstance> affixes = AffixGenerator.getAffixes(mainHand);
+            if (!affixes.isEmpty()) {
+                source.sendSuccess(() -> Component.literal("Affixes:"), false);
+                for (AffixInstance instance : affixes) {
+                    EquipmentAffix affix = instance.getAffix();
+                    if (affix != null) {
+                        source.sendSuccess(() -> Component.literal("  - " + affix.getDisplayNameEn() +
+                                " " + instance.getTierRoman() + " (+" + instance.getDisplayPercent() + "%)"), false);
+                    }
+                }
+            } else {
+                source.sendSuccess(() -> Component.literal("Affixes: None"), false);
+            }
+
             source.sendSuccess(() -> Component.literal("Current Level: +" + level), false);
             if (level < UpgradeSystem.MAX_LEVEL) {
                 int nextLevel = level + 1;
                 double chance = UpgradeSystem.getSuccessChance(nextLevel);
+                double downgradeChance = UpgradeSystem.getDowngradeChance(nextLevel);
                 int xpCost = UpgradeSystem.getXpCost(nextLevel);
                 Item reqStone = UpgradeSystem.getRequiredStone(nextLevel);
                 ItemStack reqStoneStack = new ItemStack(reqStone);
                 source.sendSuccess(() -> Component.literal("Next upgrade: +" + nextLevel +
                         " (" + (int)(chance * 100) + "% chance, " + xpCost + " XP, needs " +
                         reqStoneStack.getHoverName().getString() + ")"), false);
+                if (downgradeChance > 0) {
+                    source.sendSuccess(() -> Component.literal("")
+                            .append(Component.literal("Downgrade Risk: ").withStyle(ChatFormatting.DARK_RED))
+                            .append(Component.literal((int)(downgradeChance * 100) + "%").withStyle(ChatFormatting.RED)), false);
+                }
             } else {
                 source.sendSuccess(() -> Component.literal("Max level reached!"), false);
             }
         }
 
+        return 1;
+    }
+
+    private static int rollAffixes(CommandSourceStack source) {
+        ServerPlayer player = source.getPlayer();
+        if (player == null) {
+            source.sendFailure(Component.literal("Command must be run by a player"));
+            return 0;
+        }
+
+        ItemStack mainHand = player.getMainHandItem();
+
+        if (!UpgradeSystem.isUpgradeable(mainHand)) {
+            source.sendFailure(Component.literal("Main hand item cannot have affixes"));
+            return 0;
+        }
+
+        EquipmentGrade grade = UpgradeSystem.getGrade(mainHand);
+        AffixGenerator.rollAndApplyAffixes(mainHand, grade);
+
+        List<AffixInstance> affixes = AffixGenerator.getAffixes(mainHand);
+        if (affixes.isEmpty()) {
+            source.sendSuccess(() -> Component.literal("No affixes rolled (grade too low)"), true);
+        } else {
+            StringBuilder affixStr = new StringBuilder("Rolled affixes: ");
+            for (int i = 0; i < affixes.size(); i++) {
+                if (i > 0) affixStr.append(", ");
+                AffixInstance instance = affixes.get(i);
+                EquipmentAffix affix = instance.getAffix();
+                if (affix != null) {
+                    affixStr.append(affix.getDisplayNameEn()).append(" ").append(instance.getTierRoman());
+                }
+            }
+            source.sendSuccess(() -> Component.literal(affixStr.toString()), true);
+        }
+        return 1;
+    }
+
+    private static int clearAffixes(CommandSourceStack source) {
+        ServerPlayer player = source.getPlayer();
+        if (player == null) {
+            source.sendFailure(Component.literal("Command must be run by a player"));
+            return 0;
+        }
+
+        ItemStack mainHand = player.getMainHandItem();
+
+        if (!UpgradeSystem.isUpgradeable(mainHand)) {
+            source.sendFailure(Component.literal("Main hand item cannot have affixes"));
+            return 0;
+        }
+
+        AffixGenerator.clearAffixes(mainHand);
+        source.sendSuccess(() -> Component.literal("Cleared all affixes from item"), true);
         return 1;
     }
 

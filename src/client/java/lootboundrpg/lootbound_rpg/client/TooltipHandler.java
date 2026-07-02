@@ -1,5 +1,9 @@
 package lootboundrpg.lootbound_rpg.client;
 
+import lootboundrpg.lootbound_rpg.affix.AffixGenerator;
+import lootboundrpg.lootbound_rpg.affix.AffixInstance;
+import lootboundrpg.lootbound_rpg.affix.EquipmentAffix;
+import lootboundrpg.lootbound_rpg.config.LootboundConfig;
 import lootboundrpg.lootbound_rpg.upgrade.EquipmentGrade;
 import lootboundrpg.lootbound_rpg.upgrade.EquipmentScaling;
 import lootboundrpg.lootbound_rpg.upgrade.UpgradeSystem;
@@ -14,9 +18,7 @@ import net.minecraft.world.item.TooltipFlag;
 import java.util.List;
 
 /**
- * Adds equipment level and grade information to item tooltips.
- *
- * Shows the current level, grade, and stat bonuses for upgraded equipment.
+ * Adds equipment level, grade, and affix information to item tooltips.
  */
 public class TooltipHandler {
 
@@ -32,6 +34,7 @@ public class TooltipHandler {
 
         int level = UpgradeSystem.getLevel(stack);
         EquipmentGrade grade = UpgradeSystem.getGrade(stack);
+        LootboundConfig config = LootboundConfig.get();
 
         // Add blank line before our info
         lines.add(Component.empty());
@@ -85,15 +88,39 @@ public class TooltipHandler {
                     .append(Component.literal(": "))
                     .append(Component.literal("+0/" + UpgradeSystem.MAX_LEVEL)
                             .withStyle(ChatFormatting.DARK_GRAY)));
-            lines.add(Component.translatable("lootbound_rpg.tooltip.can_upgrade")
-                    .withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
+        }
+
+        // Show affixes if enabled and present
+        if (config.enableAffixes) {
+            List<AffixInstance> affixes = AffixGenerator.getAffixes(stack);
+            if (!affixes.isEmpty()) {
+                lines.add(Component.empty());
+                lines.add(Component.translatable("lootbound_rpg.tooltip.affixes")
+                        .withStyle(ChatFormatting.GRAY));
+                for (AffixInstance instance : affixes) {
+                    EquipmentAffix affix = instance.getAffix();
+                    if (affix != null) {
+                        // Format: ◆ Brise-Os II: +15% dégâts contre morts-vivants
+                        lines.add(Component.literal("◆ ")
+                                .withStyle(affix.getColor())
+                                .append(Component.translatable(affix.getTranslationKey())
+                                        .withStyle(affix.getColor()))
+                                .append(Component.literal(" " + instance.getTierRoman() + ": ")
+                                        .withStyle(ChatFormatting.GRAY))
+                                .append(getAffixDescription(affix, instance.tier())));
+                    }
+                }
+            }
         }
 
         // Show next upgrade info
         if (level < UpgradeSystem.MAX_LEVEL) {
+            lines.add(Component.empty());
             int nextLevel = level + 1;
             double chance = UpgradeSystem.getSuccessChance(nextLevel);
+            double downgradeChance = UpgradeSystem.getDowngradeChance(nextLevel);
             int xpCost = UpgradeSystem.getXpCost(nextLevel);
+
             lines.add(Component.translatable("lootbound_rpg.tooltip.next_level", nextLevel)
                     .withStyle(ChatFormatting.DARK_GRAY)
                     .append(Component.literal(" ("))
@@ -103,10 +130,72 @@ public class TooltipHandler {
                     .append(Component.literal(xpCost + " XP")
                             .withStyle(ChatFormatting.GREEN))
                     .append(Component.literal(")")));
+
+            // Show downgrade risk if applicable
+            if (downgradeChance > 0) {
+                lines.add(Component.translatable("lootbound_rpg.tooltip.downgrade_risk")
+                        .withStyle(ChatFormatting.DARK_RED)
+                        .append(Component.literal(": "))
+                        .append(Component.literal((int)(downgradeChance * 100) + "%")
+                                .withStyle(ChatFormatting.RED)));
+            }
         } else {
+            lines.add(Component.empty());
             lines.add(Component.translatable("lootbound_rpg.tooltip.max_level")
                     .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
         }
+    }
+
+    /**
+     * Gets a formatted description for an affix at a specific tier.
+     */
+    private static Component getAffixDescription(EquipmentAffix affix, int tier) {
+        int percent = affix.getDisplayPercent(tier);
+        String key = "lootbound_rpg.affix." + affix.getId() + ".desc";
+
+        // Build description based on affix type
+        return switch (affix) {
+            case SHARP -> Component.literal("+" + percent + "% ")
+                    .withStyle(ChatFormatting.GRAY)
+                    .append(Component.translatable("lootbound_rpg.affix.damage"));
+            case SWIFT -> Component.literal("+" + percent + "% ")
+                    .withStyle(ChatFormatting.GRAY)
+                    .append(Component.translatable("lootbound_rpg.affix.attack_speed"));
+            case BONEBREAKER -> Component.literal("+" + percent + "% ")
+                    .withStyle(ChatFormatting.GRAY)
+                    .append(Component.translatable("lootbound_rpg.affix.vs_undead"));
+            case HUNTER -> Component.literal("+" + percent + "% ")
+                    .withStyle(ChatFormatting.GRAY)
+                    .append(Component.translatable("lootbound_rpg.affix.vs_arthropods"));
+            case EXECUTIONER -> Component.literal("+" + percent + "% ")
+                    .withStyle(ChatFormatting.GRAY)
+                    .append(Component.translatable("lootbound_rpg.affix.vs_low_hp"));
+            case UNSTABLE -> Component.literal("+20% ")
+                    .withStyle(ChatFormatting.GRAY)
+                    .append(Component.translatable("lootbound_rpg.affix.damage"))
+                    .append(Component.literal(", -10% ").withStyle(ChatFormatting.DARK_RED))
+                    .append(Component.translatable("lootbound_rpg.affix.durability"));
+            case MINER -> Component.literal("+" + percent + "% ")
+                    .withStyle(ChatFormatting.GRAY)
+                    .append(Component.translatable("lootbound_rpg.affix.mining_speed"));
+            case DURABLE -> Component.literal("+" + percent + "% ")
+                    .withStyle(ChatFormatting.GRAY)
+                    .append(Component.translatable("lootbound_rpg.affix.durability"));
+            case PRECISE -> Component.literal("+" + percent + "% ")
+                    .withStyle(ChatFormatting.GRAY)
+                    .append(Component.translatable("lootbound_rpg.affix.no_durability"));
+            case PROSPECTOR -> Component.literal("+" + percent + "% ")
+                    .withStyle(ChatFormatting.GRAY)
+                    .append(Component.translatable("lootbound_rpg.affix.bonus_ore"));
+            case LIGHTWEIGHT -> Component.literal("+10% ")
+                    .withStyle(ChatFormatting.GRAY)
+                    .append(Component.translatable("lootbound_rpg.affix.mining_speed"))
+                    .append(Component.literal(", -10% ").withStyle(ChatFormatting.DARK_RED))
+                    .append(Component.translatable("lootbound_rpg.affix.durability"));
+            case STABLE -> Component.literal("+5% ")
+                    .withStyle(ChatFormatting.GRAY)
+                    .append(Component.translatable("lootbound_rpg.affix.upgrade_chance"));
+        };
     }
 
     /**

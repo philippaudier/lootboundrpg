@@ -159,6 +159,7 @@ public class UpgradeSystem {
     public enum UpgradeResult {
         SUCCESS,           // Upgrade succeeded, level increased
         FAILURE,           // Upgrade failed, stone consumed but level unchanged
+        DOWNGRADE,         // Upgrade failed AND level decreased by 1
         INVALID_ITEM,      // Item cannot be upgraded
         INVALID_STONE,     // Wrong stone type for this level
         MAX_LEVEL,         // Item is already at max level
@@ -206,8 +207,21 @@ public class UpgradeSystem {
             setLevel(equipment, targetLevel);
             return UpgradeResult.SUCCESS;
         } else {
-            // V1: Failure only consumes stone, no level loss
+            // Check for downgrade (only at +6 and above)
+            double downgradeChance = LootboundConfig.get().getDowngradeChance(targetLevel);
+            if (downgradeChance > 0 && Math.random() < downgradeChance && currentLevel > 0) {
+                setLevel(equipment, currentLevel - 1);
+                return UpgradeResult.DOWNGRADE;
+            }
             return UpgradeResult.FAILURE;
         }
+    }
+
+    /**
+     * Gets the downgrade chance for upgrading to a specific level.
+     * Used for display in the UI.
+     */
+    public static double getDowngradeChance(int targetLevel) {
+        return LootboundConfig.get().getDowngradeChance(targetLevel);
     }
 }
