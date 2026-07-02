@@ -1,0 +1,6 @@
+{
+	"model": {
+		"type": "minecraft:model",
+		"model": "lootbound_rpg:item/refined_upgrade_stone"
+	}
+}

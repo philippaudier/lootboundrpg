@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "OLO",
+    "IDI",
+    "OLO"
+  ],
+  "key": {
+    "O": "minecraft:obsidian",
+    "L": "minecraft:lapis_lazuli",
+    "I": "minecraft:iron_ingot",
+    "D": "minecraft:diamond"
+  },
+  "result": {
+    "id": "lootbound_rpg:upgrade_table",
+    "count": 1
+  }
+}

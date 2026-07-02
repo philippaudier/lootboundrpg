@@ -1,0 +1,6 @@
+{
+	"parent": "minecraft:item/generated",
+	"textures": {
+		"layer0": "lootbound_rpg:item/rare_upgrade_stone"
+	}
+}

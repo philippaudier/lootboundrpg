@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew build:*)",
+      "Bash(./gradlew.bat:*)",
+      "WebFetch(domain:docs.fabricmc.net)",
+      "WebSearch",
+      "Bash(xargs:*)",
+      "Bash(while read jar)",
+      "Bash(do unzip -l \"$jar\")",
+      "Bash(done)",
+      "Bash(unzip:*)",
+      "Bash(./gradlew compileJava:*)",
+      "Bash(./gradlew classes:*)",
+      "Bash(cat:*)",
+      "Bash(javap:*)",
+      "Bash(./gradlew dependencies:*)",
+      "Bash(./gradlew clean:*)",
+      "Bash(cmd /c \"gradlew.bat compileJava 2>&1\")",
+      "Bash(powershell -Command \"& ./gradlew.bat compileJava 2>&1 | Out-String\")",
+      "Bash(powershell -Command \"& ./gradlew.bat classes 2>&1 | Out-String\")",
+      "Bash(powershell -Command \"& ./gradlew.bat compileClientJava 2>&1 | Out-String\")",
+      "Bash(powershell -Command \"& ./gradlew.bat build 2>&1 | Out-String\")",
+      "Bash(powershell -Command \"& ./gradlew.bat runClient 2>&1 | Select-Object -First 150 | Out-String\")",
+      "Bash(powershell -Command \"Start-Process -FilePath ''./gradlew.bat'' -ArgumentList ''runClient'' -NoNewWindow\")",
+      "Bash(Get-Content \"C:\\\\Users\\\\Philippe\\\\Documents\\\\Programming\\\\MinecraftMods\\\\LootboundRPG\\\\run\\\\logs\\\\latest.log\" -Tail 100)",
+      "Bash(Select-String -Pattern \"LootboundRPG\")",
+      "Bash(python:*)",
+      "Bash(./gradlew:*)",
+      "WebFetch(domain:wiki.fabricmc.net)"
+    ]
+  }
+}

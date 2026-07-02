@@ -1,0 +1,38 @@
+{
+	"schemaVersion": 1,
+	"id": "lootbound_rpg",
+	"version": "${version}",
+	"name": "Lootbound RPG",
+	"description": "Transform Minecraft progression into a loot-based RPG with equipment upgrades.",
+	"authors": [
+		"Philippe"
+	],
+	"contact": {},
+	"license": "CC0-1.0",
+	"icon": "assets/lootbound_rpg/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"lootboundrpg.lootbound_rpg.LootboundRpgMod"
+		],
+		"client": [
+			"lootboundrpg.lootbound_rpg.client.LootboundRpgClient"
+		],
+		"fabric-datagen": [
+			"lootboundrpg.lootbound_rpg.datagen.LootboundRpgDataGenerator"
+		]
+	},
+	"mixins": [
+		"lootbound_rpg.mixins.json",
+		{
+			"config": "lootbound_rpg.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.3",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

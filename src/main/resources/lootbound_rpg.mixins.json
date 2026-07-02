@@ -1,0 +1,16 @@
+{
+	"required": true,
+	"package": "lootboundrpg.lootbound_rpg.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"mixins": [
+		"ItemStackMixin",
+		"MiningSpeedMixin",
+		"PlayerAttackMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}

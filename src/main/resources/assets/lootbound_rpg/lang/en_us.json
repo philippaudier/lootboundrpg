@@ -1,0 +1,37 @@
+{
+	"item.lootbound_rpg.crude_upgrade_stone": "Crude Upgrade Stone",
+	"item.lootbound_rpg.refined_upgrade_stone": "Refined Upgrade Stone",
+	"item.lootbound_rpg.rare_upgrade_stone": "Rare Upgrade Stone",
+	"item.lootbound_rpg.perfect_upgrade_stone": "Perfect Upgrade Stone",
+	"item.lootbound_rpg.protection_stone": "Protection Stone",
+	"item.lootbound_rpg.stability_stone": "Stability Stone",
+
+	"block.lootbound_rpg.upgrade_table": "Upgrade Table",
+
+	"lootbound_rpg.grade.common": "Common",
+	"lootbound_rpg.grade.uncommon": "Uncommon",
+	"lootbound_rpg.grade.rare": "Rare",
+	"lootbound_rpg.grade.epic": "Epic",
+	"lootbound_rpg.grade.legendary": "Legendary",
+
+	"lootbound_rpg.tooltip.grade": "Grade",
+	"lootbound_rpg.tooltip.grade_bonus": " bonus to upgrades",
+	"lootbound_rpg.tooltip.level": "Level",
+	"lootbound_rpg.tooltip.attack_damage": " Attack Damage",
+	"lootbound_rpg.tooltip.mining_speed": " Mining Speed",
+	"lootbound_rpg.tooltip.can_upgrade": "Can be upgraded with stones",
+	"lootbound_rpg.tooltip.next_level": "Next: +%s",
+	"lootbound_rpg.tooltip.max_level": "MAX LEVEL",
+
+	"lootbound_rpg.gui.upgrade": "Upgrade",
+	"lootbound_rpg.gui.place_equipment": "Place equipment to upgrade",
+	"lootbound_rpg.gui.max_reached": "Maximum level reached!",
+	"lootbound_rpg.gui.chance": "Chance: %s%%",
+	"lootbound_rpg.gui.xp_cost": "Cost: %s XP",
+	"lootbound_rpg.gui.need_stone": "Insert upgrade stone",
+	"lootbound_rpg.gui.wrong_stone": "Wrong stone for this level",
+	"lootbound_rpg.gui.not_enough_xp": "Not enough XP!",
+	"lootbound_rpg.gui.success": "Enhancement successful!",
+	"lootbound_rpg.gui.failure": "The stone shatters...",
+	"lootbound_rpg.gui.max_level": "Maximum level reached"
+}

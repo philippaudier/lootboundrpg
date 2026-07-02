@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "minecraft:block/oak_planks",
+    "east": "lootbound_rpg:block/upgrade_table_side",
+    "north": "lootbound_rpg:block/upgrade_table_side",
+    "particle": "lootbound_rpg:block/upgrade_table_top",
+    "south": "lootbound_rpg:block/upgrade_table_side",
+    "up": "lootbound_rpg:block/upgrade_table_top",
+    "west": "lootbound_rpg:block/upgrade_table_side"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "lootbound_rpg:block/upgrade_table"
+  }
+}

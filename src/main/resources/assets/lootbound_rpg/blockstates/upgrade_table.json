@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "lootbound_rpg:block/upgrade_table"
+    }
+  }
+}

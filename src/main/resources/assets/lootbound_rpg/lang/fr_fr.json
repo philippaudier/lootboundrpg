@@ -1,0 +1,37 @@
+{
+	"item.lootbound_rpg.crude_upgrade_stone": "Pierre d'Amélioration Brute",
+	"item.lootbound_rpg.refined_upgrade_stone": "Pierre d'Amélioration Raffinée",
+	"item.lootbound_rpg.rare_upgrade_stone": "Pierre d'Amélioration Rare",
+	"item.lootbound_rpg.perfect_upgrade_stone": "Pierre d'Amélioration Parfaite",
+	"item.lootbound_rpg.protection_stone": "Pierre de Protection",
+	"item.lootbound_rpg.stability_stone": "Pierre de Stabilité",
+
+	"block.lootbound_rpg.upgrade_table": "Table d'Amélioration",
+
+	"lootbound_rpg.grade.common": "Commun",
+	"lootbound_rpg.grade.uncommon": "Peu commun",
+	"lootbound_rpg.grade.rare": "Rare",
+	"lootbound_rpg.grade.epic": "Épique",
+	"lootbound_rpg.grade.legendary": "Légendaire",
+
+	"lootbound_rpg.tooltip.grade": "Grade",
+	"lootbound_rpg.tooltip.grade_bonus": " bonus aux améliorations",
+	"lootbound_rpg.tooltip.level": "Niveau",
+	"lootbound_rpg.tooltip.attack_damage": " Dégâts d'Attaque",
+	"lootbound_rpg.tooltip.mining_speed": " Vitesse de Minage",
+	"lootbound_rpg.tooltip.can_upgrade": "Peut être amélioré avec des pierres",
+	"lootbound_rpg.tooltip.next_level": "Suivant: +%s",
+	"lootbound_rpg.tooltip.max_level": "NIVEAU MAXIMUM",
+
+	"lootbound_rpg.gui.upgrade": "Améliorer",
+	"lootbound_rpg.gui.place_equipment": "Placez l'équipement à améliorer",
+	"lootbound_rpg.gui.max_reached": "Niveau maximum atteint !",
+	"lootbound_rpg.gui.chance": "Chance: %s%%",
+	"lootbound_rpg.gui.xp_cost": "Coût: %s XP",
+	"lootbound_rpg.gui.need_stone": "Insérez une pierre d'amélioration",
+	"lootbound_rpg.gui.wrong_stone": "Mauvaise pierre pour ce niveau",
+	"lootbound_rpg.gui.not_enough_xp": "XP insuffisante !",
+	"lootbound_rpg.gui.success": "L'arme résonne avec la pierre !",
+	"lootbound_rpg.gui.failure": "La pierre se fissure...",
+	"lootbound_rpg.gui.max_level": "Niveau maximum atteint"
+}
