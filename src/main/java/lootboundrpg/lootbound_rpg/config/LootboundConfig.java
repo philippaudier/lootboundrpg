@@ -90,13 +90,16 @@ public class LootboundConfig {
     public int mobPackGlobalCap = 40;
 
     /** Allow packs to spawn during daytime in lit areas */
-    public boolean allowDaylightPacks = false;
+    public boolean allowDaylightPacks = true;
 
     /** Chance for elite mobs to spawn in packs (0.0 to 1.0) */
     public double eliteChanceInPacks = 0.08;
 
     /** Debug logging for mob pack spawning */
-    public boolean debugMobPackSpawning = false;
+    public boolean debugMobPackSpawning = true;
+
+    /** Disable vanilla hostile mob spawning (zombies, skeletons, etc.) when packs are enabled */
+    public boolean disableVanillaHostileSpawns = true;
 
     // === Debug ===
 

@@ -8,6 +8,7 @@ import lootboundrpg.lootbound_rpg.item.ModItems;
 import lootboundrpg.lootbound_rpg.loot.MobEquipmentDrops;
 import lootboundrpg.lootbound_rpg.loot.ModLootTables;
 import lootboundrpg.lootbound_rpg.mobpack.MobPackSpawner;
+import lootboundrpg.lootbound_rpg.mobpack.VanillaSpawnBlocker;
 import lootboundrpg.lootbound_rpg.registry.ModBlockEntities;
 import lootboundrpg.lootbound_rpg.registry.ModBlocks;
 import lootboundrpg.lootbound_rpg.registry.ModScreenHandlers;
@@ -56,6 +57,9 @@ public class LootboundRpgMod implements ModInitializer {
 
         // Register mob pack spawner (V1.2)
         MobPackSpawner.register();
+
+        // Register vanilla spawn blocker (V1.2)
+        VanillaSpawnBlocker.register();
 
         LOGGER.info("Lootbound RPG initialized!");
     }

@@ -51,7 +51,13 @@ public class MobPackSpawner {
 
             // Try to spawn packs for each player
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-                if (player.isSpectator() || player.isCreative()) continue;
+                if (player.isSpectator()) {
+                    continue;
+                }
+                if (player.isCreative()) {
+                    // Allow pack spawning in creative for testing
+                    // but with reduced debug spam
+                }
 
                 trySpawnPackForPlayer(player);
             }
@@ -69,7 +75,14 @@ public class MobPackSpawner {
         // Check cooldown
         long lastSpawn = playerCooldowns.getOrDefault(playerId, 0L);
         long cooldownMs = config.mobPackSpawnIntervalSeconds * 1000L;
-        if (currentTime - lastSpawn < cooldownMs) return;
+        long timeRemaining = (cooldownMs - (currentTime - lastSpawn)) / 1000;
+        if (currentTime - lastSpawn < cooldownMs) {
+            // Only log occasionally to avoid spam
+            if (timeRemaining % 30 == 0 && timeRemaining > 0) {
+                debugLog("Cooldown for " + player.getName().getString() + ": " + timeRemaining + "s remaining");
+            }
+            return;
+        }
 
         // Check global cap
         if (packMobIds.size() >= config.mobPackGlobalCap) {
@@ -87,22 +100,32 @@ public class MobPackSpawner {
         // Get server level
         if (!(player.level() instanceof ServerLevel serverLevel)) return;
 
+        debugLog("Attempting pack spawn for " + player.getName().getString() +
+                " at pos " + player.blockPosition());
+
         // Find valid spawn position
         BlockPos spawnPos = findSpawnPosition(player, serverLevel);
         if (spawnPos == null) {
-            debugLog("No valid spawn position found for " + player.getName().getString());
+            debugLog("No valid spawn position found for " + player.getName().getString() +
+                    " (tried 10 positions, all failed light/terrain checks)");
+            // Still reset cooldown partially to avoid spam
+            playerCooldowns.put(playerId, currentTime - (cooldownMs / 2));
             return;
         }
 
         // Select random pack type
         MobPackType packType = MobPackType.randomPack();
 
+        debugLog("Found valid position " + spawnPos + ", spawning " + packType.getDisplayName());
+
         // Spawn the pack
         int spawned = spawnPack(serverLevel, spawnPos, packType);
         if (spawned > 0) {
             playerCooldowns.put(playerId, currentTime);
-            debugLog("Spawned " + packType.getDisplayName() + " (" + spawned + " mobs) at " + spawnPos +
+            debugLog("SUCCESS: Spawned " + packType.getDisplayName() + " (" + spawned + " mobs) at " + spawnPos +
                     " for " + player.getName().getString());
+        } else {
+            debugLog("FAILED: Could not spawn any mobs for " + packType.getDisplayName());
         }
     }
 
