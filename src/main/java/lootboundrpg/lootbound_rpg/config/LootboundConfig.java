@@ -69,6 +69,35 @@ public class LootboundConfig {
     public int eliteMobGradeEpic = 20;
     public int eliteMobGradeLegendary = 10;
 
+    // === Mob Packs ===
+
+    /** Enable mob pack spawning system */
+    public boolean enableMobPacks = true;
+
+    /** Interval between pack spawn attempts per player (seconds) */
+    public int mobPackSpawnIntervalSeconds = 120;
+
+    /** Minimum distance from player for pack spawns */
+    public int mobPackMinDistance = 32;
+
+    /** Maximum distance from player for pack spawns */
+    public int mobPackMaxDistance = 96;
+
+    /** Maximum hostile mobs nearby before blocking pack spawns */
+    public int mobPackMaxHostileNearby = 12;
+
+    /** Global cap on total pack mobs in the world */
+    public int mobPackGlobalCap = 40;
+
+    /** Allow packs to spawn during daytime in lit areas */
+    public boolean allowDaylightPacks = false;
+
+    /** Chance for elite mobs to spawn in packs (0.0 to 1.0) */
+    public double eliteChanceInPacks = 0.08;
+
+    /** Debug logging for mob pack spawning */
+    public boolean debugMobPackSpawning = false;
+
     // === Debug ===
 
     /** Enable debug logging for drops and upgrades */

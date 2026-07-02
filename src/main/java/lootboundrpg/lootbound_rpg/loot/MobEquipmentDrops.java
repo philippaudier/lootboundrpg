@@ -2,6 +2,7 @@ package lootboundrpg.lootbound_rpg.loot;
 
 import lootboundrpg.lootbound_rpg.LootboundRpgMod;
 import lootboundrpg.lootbound_rpg.config.LootboundConfig;
+import lootboundrpg.lootbound_rpg.mobpack.EliteMobFactory;
 import lootboundrpg.lootbound_rpg.upgrade.EquipmentGrade;
 import lootboundrpg.lootbound_rpg.upgrade.UpgradeSystem;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
@@ -74,6 +75,15 @@ public class MobEquipmentDrops {
     }
 
     private static void handleMobDeath(LivingEntity entity) {
+        // Check if this is a Lootbound elite mob (from pack spawner)
+        boolean isLootboundElite = EliteMobFactory.isElite(entity);
+
+        // Lootbound elites always get elite tier drops with guaranteed drop
+        if (isLootboundElite) {
+            tryDropEquipment(entity, 1.0f, MobTier.ELITE); // 100% drop chance
+            return;
+        }
+
         // Get entity type ID (e.g., "minecraft:zombie" -> "zombie")
         String entityId = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).getPath();
 

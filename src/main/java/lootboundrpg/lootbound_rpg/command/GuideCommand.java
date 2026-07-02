@@ -14,7 +14,7 @@ import net.minecraft.network.chat.MutableComponent;
  * In-game guide command for Lootbound RPG.
  *
  * Usage: /lbrpg guide [topic]
- * Topics: stones, upgrades, grades, table, drops
+ * Topics: stones, upgrades, grades, table, drops, packs
  */
 public class GuideCommand {
 
@@ -37,7 +37,9 @@ public class GuideCommand {
                         .then(Commands.literal("table")
                                 .executes(GuideCommand::showTable))
                         .then(Commands.literal("drops")
-                                .executes(GuideCommand::showDrops)))
+                                .executes(GuideCommand::showDrops))
+                        .then(Commands.literal("packs")
+                                .executes(GuideCommand::showPacks)))
                 .then(Commands.literal("reload")
                         .executes(GuideCommand::reloadConfig)));
     }
@@ -54,6 +56,7 @@ public class GuideCommand {
         sendBullet(source, "grades", "Equipment rarity grades");
         sendBullet(source, "table", "Using the Upgrade Table");
         sendBullet(source, "drops", "Mob equipment drops");
+        sendBullet(source, "packs", "Mob pack encounters");
 
         return 1;
     }
@@ -138,6 +141,25 @@ public class GuideCommand {
         return 1;
     }
 
+    private static int showPacks(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+
+        sendHeader(source, "Mob Packs");
+        sendLine(source, "Mob packs spawn periodically around players:");
+        sendLine(source, "");
+        sendPackInfo(source, "Zombie Pack", "3-5 zombies", "Common");
+        sendPackInfo(source, "Skeleton Patrol", "2-3 skeletons + zombie", "Dangerous");
+        sendPackInfo(source, "Spider Nest", "3 spiders", "Dangerous");
+        sendPackInfo(source, "Mixed Ambush", "2 zombies + skeleton + spider", "Elite");
+        sendLine(source, "");
+        sendLine(source, ChatFormatting.RED + "Elite mobs" + ChatFormatting.WHITE + " can spawn in packs!");
+        sendLine(source, "Elites have boosted stats and guaranteed drops.");
+        sendLine(source, "");
+        sendLine(source, "Debug: /lbrpg spawnpack <type>");
+
+        return 1;
+    }
+
     private static int reloadConfig(CommandContext<CommandSourceStack> context) {
         LootboundConfig.reload();
         context.getSource().sendSuccess(
@@ -196,5 +218,20 @@ public class GuideCommand {
                 .append(Component.literal(mobs).withStyle(ChatFormatting.WHITE));
         source.sendSuccess(() -> msg, false);
         source.sendSuccess(() -> Component.literal("    → " + drops).withStyle(ChatFormatting.GRAY), false);
+    }
+
+    private static void sendPackInfo(CommandSourceStack source, String name, String composition, String tier) {
+        ChatFormatting tierColor = switch (tier) {
+            case "Common" -> ChatFormatting.WHITE;
+            case "Dangerous" -> ChatFormatting.YELLOW;
+            case "Elite" -> ChatFormatting.RED;
+            default -> ChatFormatting.GRAY;
+        };
+
+        MutableComponent msg = Component.literal("  ")
+                .append(Component.literal(name).withStyle(ChatFormatting.AQUA))
+                .append(Component.literal(" [" + tier + "]").withStyle(tierColor))
+                .append(Component.literal(" - " + composition).withStyle(ChatFormatting.GRAY));
+        source.sendSuccess(() -> msg, false);
     }
 }

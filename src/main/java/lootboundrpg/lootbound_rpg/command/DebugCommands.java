@@ -3,12 +3,17 @@ package lootboundrpg.lootbound_rpg.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import lootboundrpg.lootbound_rpg.item.ModItems;
+import lootboundrpg.lootbound_rpg.mobpack.MobPackSpawner;
+import lootboundrpg.lootbound_rpg.mobpack.MobPackType;
 import lootboundrpg.lootbound_rpg.upgrade.EquipmentGrade;
 import lootboundrpg.lootbound_rpg.upgrade.UpgradeSystem;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -25,6 +30,8 @@ import net.minecraft.world.item.Items;
  * /lbrpg setlevel <level> - Set level of held item directly
  * /lbrpg setgrade <grade> - Set grade of held item
  * /lbrpg info - Show info about held item
+ * /lbrpg spawnpack <type> - Spawn a mob pack near the player
+ * /lbrpg packinfo - Show mob pack system status
  */
 public class DebugCommands {
 
@@ -103,6 +110,23 @@ public class DebugCommands {
                 // /lbrpg info - show info about held item
                 .then(Commands.literal("info")
                         .executes(ctx -> showInfo(ctx.getSource())))
+
+                // /lbrpg spawnpack <type> - spawn a mob pack
+                .then(Commands.literal("spawnpack")
+                        .then(Commands.literal("zombie_pack")
+                                .executes(ctx -> spawnPack(ctx.getSource(), MobPackType.ZOMBIE_PACK)))
+                        .then(Commands.literal("skeleton_patrol")
+                                .executes(ctx -> spawnPack(ctx.getSource(), MobPackType.SKELETON_PATROL)))
+                        .then(Commands.literal("spider_nest")
+                                .executes(ctx -> spawnPack(ctx.getSource(), MobPackType.SPIDER_NEST)))
+                        .then(Commands.literal("mixed_ambush")
+                                .executes(ctx -> spawnPack(ctx.getSource(), MobPackType.MIXED_AMBUSH)))
+                        .then(Commands.literal("random")
+                                .executes(ctx -> spawnPack(ctx.getSource(), MobPackType.randomPack()))))
+
+                // /lbrpg packinfo - show pack system status
+                .then(Commands.literal("packinfo")
+                        .executes(ctx -> showPackInfo(ctx.getSource())))
         );
     }
 
@@ -261,6 +285,74 @@ public class DebugCommands {
             } else {
                 source.sendSuccess(() -> Component.literal("Max level reached!"), false);
             }
+        }
+
+        return 1;
+    }
+
+    private static int spawnPack(CommandSourceStack source, MobPackType packType) {
+        ServerPlayer player = source.getPlayer();
+        if (player == null) {
+            source.sendFailure(Component.literal("Command must be run by a player"));
+            return 0;
+        }
+
+        // Find spawn position near player (15-25 blocks away)
+        BlockPos playerPos = player.blockPosition();
+        double angle = Math.random() * Math.PI * 2;
+        int distance = 15 + (int)(Math.random() * 10);
+        int x = playerPos.getX() + (int)(Math.cos(angle) * distance);
+        int z = playerPos.getZ() + (int)(Math.sin(angle) * distance);
+
+        // Find ground level
+        BlockPos spawnPos = new BlockPos(x, playerPos.getY(), z);
+        for (int y = playerPos.getY() + 10; y > playerPos.getY() - 10; y--) {
+            BlockPos checkPos = new BlockPos(x, y, z);
+            if (player.level().getBlockState(checkPos.below()).isSolid() &&
+                player.level().getBlockState(checkPos).isAir()) {
+                spawnPos = checkPos;
+                break;
+            }
+        }
+
+        // Get server level
+        if (!(player.level() instanceof ServerLevel serverLevel)) {
+            source.sendFailure(Component.literal("Not on server side"));
+            return 0;
+        }
+
+        // Spawn the pack
+        int spawned = MobPackSpawner.spawnPack(serverLevel, spawnPos, packType);
+
+        if (spawned > 0) {
+            final BlockPos finalPos = spawnPos;
+            source.sendSuccess(() -> Component.literal("")
+                    .append(Component.literal("[Pack] ").withStyle(ChatFormatting.GOLD))
+                    .append(Component.literal("Spawned ").withStyle(ChatFormatting.WHITE))
+                    .append(Component.literal(packType.getDisplayName()).withStyle(ChatFormatting.YELLOW))
+                    .append(Component.literal(" (" + spawned + " mobs) at ").withStyle(ChatFormatting.WHITE))
+                    .append(Component.literal(finalPos.toShortString()).withStyle(ChatFormatting.AQUA)), true);
+            return 1;
+        } else {
+            source.sendFailure(Component.literal("Failed to spawn pack (no valid positions)"));
+            return 0;
+        }
+    }
+
+    private static int showPackInfo(CommandSourceStack source) {
+        int packMobCount = MobPackSpawner.getPackMobCount();
+
+        source.sendSuccess(() -> Component.literal("")
+                .append(Component.literal("=== Mob Pack Info ===").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD)), false);
+
+        source.sendSuccess(() -> Component.literal("Active pack mobs: ")
+                .append(Component.literal(String.valueOf(packMobCount)).withStyle(ChatFormatting.YELLOW)), false);
+
+        source.sendSuccess(() -> Component.literal("Available packs:").withStyle(ChatFormatting.WHITE), false);
+        for (MobPackType type : MobPackType.values()) {
+            source.sendSuccess(() -> Component.literal("  - ")
+                    .append(Component.literal(type.name().toLowerCase()).withStyle(ChatFormatting.AQUA))
+                    .append(Component.literal(" (" + type.getTier() + ")").withStyle(ChatFormatting.GRAY)), false);
         }
 
         return 1;
